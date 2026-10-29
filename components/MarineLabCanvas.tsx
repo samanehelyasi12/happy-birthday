@@ -459,10 +459,10 @@ export const MarineLabCanvas: React.FC<MarineLabCanvasProps> = ({
           // Camera pulled back on cake so full two-tier cake, 4 candles, flames and confetti are completely visible
           targetCameraPos.set(
             -3.4,
-            isMobileView ? 2.8 : 2.3,
-            isMobileView ? 5.8 : 4.4
+            isMobileView ? 3.6 : 2.3,
+            isMobileView ? 9.6 : 4.4
           );
-          targetLookAt.set(-3.4, 1.35, 0.2);
+          targetLookAt.set(-3.4, isMobileView ? 1.0 : 1.35, 0.2);
           break;
         case 'lab':
         default:

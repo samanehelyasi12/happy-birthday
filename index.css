@@ -40,3 +40,9 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(56, 189, 248, 0.5);
 }
+
+/* Keep bottom action cards clear of the mobile home indicator.
+   env() is 0 on desktop, so nothing changes there. */
+.mb-safe {
+  margin-bottom: env(safe-area-inset-bottom, 0px);
+}

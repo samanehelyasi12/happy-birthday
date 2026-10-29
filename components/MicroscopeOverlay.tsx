@@ -94,7 +94,7 @@ export const MicroscopeOverlay: React.FC<MicroscopeOverlayProps> = ({
       </div>
 
       {/* Bottom Floating Control & Dedication Card (Decluttered & Mobile Friendly) */}
-      <div className="w-full max-w-xl mx-auto pointer-events-auto bg-slate-900/90 border border-slate-700/60 rounded-2xl p-3 sm:p-4 shadow-2xl backdrop-blur-md">
+      <div className="mb-safe w-full max-w-xl mx-auto pointer-events-auto bg-slate-900/90 border border-slate-700/60 rounded-2xl p-3 sm:p-4 shadow-2xl backdrop-blur-md">
         {/* Controls row */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5 mb-2.5">
           <div className="flex items-center gap-1.5 text-xs text-sky-400 font-medium">

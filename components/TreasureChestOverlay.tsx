@@ -55,7 +55,7 @@ export const TreasureChestOverlay: React.FC<TreasureChestOverlayProps> = ({
       </div>
 
       {/* Bottom Floating Interactive Action Card */}
-      <div className="w-full max-w-lg mx-auto pointer-events-auto bg-slate-900/95 border border-amber-500/40 rounded-2xl p-3 sm:p-4 shadow-2xl backdrop-blur-md text-right">
+      <div className="mb-safe w-full max-w-lg mx-auto pointer-events-auto bg-slate-900/95 border border-amber-500/40 rounded-2xl p-3 sm:p-4 shadow-2xl backdrop-blur-md text-right">
         {!chestUnlocked ? (
           <div className="text-center">
             <div className="flex items-center justify-between mb-2.5">

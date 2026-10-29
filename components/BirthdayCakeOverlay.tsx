@@ -107,7 +107,7 @@ export const BirthdayCakeOverlay: React.FC<BirthdayCakeOverlayProps> = ({
       </div>
 
       {/* Bottom Floating Interactive Action Card (Ultra-compact so cake & candles remain 100% visible) */}
-      <div className="w-full max-w-md mx-auto pointer-events-auto bg-slate-900/90 border border-purple-500/30 rounded-2xl p-2.5 sm:p-3.5 shadow-2xl backdrop-blur-md text-center">
+      <div className="mb-safe w-full max-w-md mx-auto pointer-events-auto bg-slate-900/90 border border-purple-500/30 rounded-2xl p-2.5 sm:p-3.5 shadow-2xl backdrop-blur-md text-center">
         {!candlesBlown ? (
           <div>
             <div className="flex items-center justify-between mb-2">
