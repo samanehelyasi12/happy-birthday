@@ -14,8 +14,10 @@ import { MicroscopeOverlay } from './components/MicroscopeOverlay';
 import { BirthdayCakeOverlay } from './components/BirthdayCakeOverlay';
 import { TreasureChestOverlay } from './components/TreasureChestOverlay';
 import { BirthdayLetterModal } from './components/BirthdayLetterModal';
+import { ResearchLogDrawer } from './components/ResearchLogDrawer';
 
 export default function App() {
+  const [logOpen, setLogOpen] = useState(false);
   const [expedition, setExpedition] = useState<ExpeditionState>({
     discoveredSpecimens: {
       tardigrade: true,
@@ -129,6 +131,7 @@ export default function App() {
   };
 
   const handleReplayExpedition = () => {
+    setLogOpen(false);
     setExpedition({
       discoveredSpecimens: {
         tardigrade: true,
@@ -178,6 +181,7 @@ export default function App() {
         audioMuted={expedition.audioMuted}
         onToggleMute={handleToggleMute}
         onOpenLetter={() => setExpedition((prev) => ({ ...prev, letterOpen: true }))}
+        onOpenLog={() => setLogOpen(true)}
       />
 
       {/* View-Specific Overlays */}
@@ -228,6 +232,17 @@ export default function App() {
         }
         onOpenMicroscope={() => handleSetViewMode('microscope')}
         onOpenLetter={() => setExpedition((prev) => ({ ...prev, letterOpen: true }))}
+      />
+
+      {/* Marine Field Log Drawer */}
+      <ResearchLogDrawer
+        isOpen={logOpen}
+        onClose={() => setLogOpen(false)}
+        discoveredSpecimens={expedition.discoveredSpecimens}
+        onSelectSpecimen={handleSelectSpecimen}
+        onGoToMicroscope={() => handleSetViewMode('microscope')}
+        onGoToChest={() => handleSetViewMode('chest')}
+        onGoToCake={() => handleSetViewMode('cake')}
       />
 
       {/* Birthday Letter & Honorary Certificate Modal */}

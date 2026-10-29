@@ -11,6 +11,7 @@ interface HeaderBarProps {
   audioMuted: boolean;
   onToggleMute: () => void;
   onOpenLetter: () => void;
+  onOpenLog: () => void;
 }
 
 export const HeaderBar: React.FC<HeaderBarProps> = ({
@@ -23,6 +24,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   audioMuted,
   onToggleMute,
   onOpenLetter,
+  onOpenLog,
 }) => {
   return (
     <header className="absolute top-0 left-0 right-0 z-20 pointer-events-none p-2.5 sm:p-4 flex items-center justify-between gap-2" dir="rtl">
@@ -49,13 +51,19 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
 
       {/* Right Controls: Ambient Music, Mute, Letter */}
       <div className="pointer-events-auto flex items-center gap-1.5">
-        {/* Progress Badge (Desktop) */}
-        <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900/80 border border-slate-700/60 shadow-xl backdrop-blur-md text-xs font-mono text-slate-300">
+        {/* Progress Badge (Desktop) — also opens the Marine Field Log */}
+        <button
+          type="button"
+          onClick={onOpenLog}
+          aria-label="باز کردن دفترچه اکتشافات مرسدس"
+          title="دفترچه اکتشافات مرسدس"
+          className="hidden md:flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800/80 border border-slate-700/60 hover:border-sky-400/50 shadow-xl backdrop-blur-md text-xs font-mono text-slate-300 transition-colors cursor-pointer"
+        >
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
           <span>کشف: {discoveredCount}/{totalSpecimens}</span>
           {chestUnlocked && <span className="text-amber-400">✦ صندوقچه</span>}
           {candlesBlown && <span className="text-pink-400">✦ شمع</span>}
-        </div>
+        </button>
 
         {/* Ambient Oceanic Sound */}
         <button

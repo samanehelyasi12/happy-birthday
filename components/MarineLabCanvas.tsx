@@ -290,7 +290,41 @@ export const MarineLabCanvas: React.FC<MarineLabCanvasProps> = ({
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
 
-    const handlePointerDown = (event: MouseEvent) => {
+    // A selection must be a real click/tap, not the end of an orbit drag.
+    // We record where the press started and only raycast on release when the
+    // pointer barely moved, so dragging over a jar/chest/cake just orbits.
+    const CLICK_DRAG_THRESHOLD_PX = 6;
+
+    let pendingPress: {
+      pointerId: number;
+      x: number;
+      y: number;
+      canSelect: boolean;
+    } | null = null;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      pendingPress = {
+        pointerId: event.pointerId,
+        x: event.clientX,
+        y: event.clientY,
+        canSelect: event.isPrimary && (event.pointerType !== 'mouse' || event.button === 0),
+      };
+    };
+
+    const handlePointerCancel = () => {
+      pendingPress = null;
+    };
+
+    const handlePointerUp = (event: PointerEvent) => {
+      const press = pendingPress;
+      pendingPress = null;
+
+      if (!press || !press.canSelect || press.pointerId !== event.pointerId) return;
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+      const dragDistance = Math.hypot(event.clientX - press.x, event.clientY - press.y);
+      if (dragDistance > CLICK_DRAG_THRESHOLD_PX) return;
+
       const rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -334,6 +368,8 @@ export const MarineLabCanvas: React.FC<MarineLabCanvasProps> = ({
     };
 
     renderer.domElement.addEventListener('pointerdown', handlePointerDown);
+    renderer.domElement.addEventListener('pointerup', handlePointerUp);
+    renderer.domElement.addEventListener('pointercancel', handlePointerCancel);
 
     const targetCameraPos = new THREE.Vector3(0, 5.2, 9.2);
     const targetLookAt = new THREE.Vector3(0, 1.2, 0);
@@ -578,6 +614,8 @@ export const MarineLabCanvas: React.FC<MarineLabCanvasProps> = ({
     return () => {
       window.removeEventListener('resize', handleResize);
       renderer.domElement.removeEventListener('pointerdown', handlePointerDown);
+      renderer.domElement.removeEventListener('pointerup', handlePointerUp);
+      renderer.domElement.removeEventListener('pointercancel', handlePointerCancel);
       cancelAnimationFrame(frameId);
       clearTimeout(frameId);
       controls.dispose();
