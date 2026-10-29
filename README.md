@@ -1,4 +1,5 @@
 # Happy Birthday 🎂
 
-[**🎉 View the project on GitHub**](https://github.com/samanehelyasi12/happy-birthday)
+[**🎉 Open the Birthday Website**](https://samanehelyasi12.github.io/happy-birthday/)
 
+This website is published with GitHub Pages.
