@@ -1,3 +1,4 @@
 # Happy Birthday 🎂
 
-The live website link will be added here once the Google AI Studio published URL is available.
+[**🎉 View the project on GitHub**](https://github.com/samanehelyasi12/happy-birthday)
+
