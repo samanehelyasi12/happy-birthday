@@ -81,6 +81,11 @@ export const MarineLabCanvas: React.FC<MarineLabCanvasProps> = ({
     const width = container.clientWidth || window.innerWidth;
     const height = container.clientHeight || window.innerHeight;
     const isMobile = width < 768;
+    // Touch devices get the mobile performance budget even in landscape, where
+    // the viewport is wider than 768px but the GPU is still a phone GPU.
+    const isHandheld =
+      isMobile ||
+      (typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches);
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x071120); // deep oceanic midnight
@@ -98,9 +103,17 @@ export const MarineLabCanvas: React.FC<MarineLabCanvasProps> = ({
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.15;
-    renderer.setPixelRatio(isSoftwareGl ? 1 : Math.min(window.devicePixelRatio, 2));
+    // Phones render far fewer pixels per frame when the pixel ratio is capped.
+    // 1.25x still looks sharp on a high-DPI screen and costs far less than 2x.
+    const maxPixelRatio = isSoftwareGl ? 1 : isHandheld ? 1.25 : 2;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxPixelRatio));
     renderer.shadowMap.enabled = !isSoftwareGl;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = isHandheld ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
+    if (isHandheld && !isSoftwareGl) {
+      // Animated shadows do not need refreshing on every frame on a phone.
+      renderer.shadowMap.autoUpdate = false;
+      renderer.shadowMap.needsUpdate = true;
+    }
 
     container.appendChild(renderer.domElement);
 
@@ -123,8 +136,8 @@ export const MarineLabCanvas: React.FC<MarineLabCanvasProps> = ({
     keyLight.position.set(5, 8, 5);
     keyLight.castShadow = !isSoftwareGl;
     if (keyLight.castShadow) {
-      keyLight.shadow.mapSize.width = 1024;
-      keyLight.shadow.mapSize.height = 1024;
+      keyLight.shadow.mapSize.width = isHandheld ? 512 : 1024;
+      keyLight.shadow.mapSize.height = isHandheld ? 512 : 1024;
       keyLight.shadow.bias = -0.0005;
       keyLight.shadow.normalBias = 0.02;
     }
@@ -286,6 +299,13 @@ export const MarineLabCanvas: React.FC<MarineLabCanvasProps> = ({
     const particleSystem = new THREE.Points(pGeom, pMat);
     scene.add(particleSystem);
 
+    // `transmission` makes WebGLRenderer draw the whole scene a second time
+    // into an offscreen buffer every frame to refract it, and that pass runs at
+    // full resolution. Rendering it at a fraction of the resolution keeps the
+    // exact same glass look (refraction is blurry anyway) for a large speed-up
+    // on phone GPUs. Desktop keeps a higher quality scale.
+    renderer.transmissionResolutionScale = isHandheld ? 0.25 : 0.6;
+
     // Raycaster for click selection
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2();
@@ -375,6 +395,16 @@ export const MarineLabCanvas: React.FC<MarineLabCanvasProps> = ({
     const targetLookAt = new THREE.Vector3(0, 1.2, 0);
 
     let frameId = 0;
+    let paused = false;
+    let shadowFrame = 0;
+    // Quality ladder: 0 = full, 1 = native resolution, 2 = reduced resolution.
+    // It only steps down when the device genuinely cannot keep up.
+    let qualityStage = 0;
+    let qualityLocked = isSoftwareGl;
+    let warmupFrames = 60;
+    let sampledFrames = 0;
+    let sampledMs = 0;
+    let lastFrameAt = 0;
     const clock = new THREE.Clock();
 
     function afterDraw(cb: () => void) {
@@ -396,6 +426,41 @@ export const MarineLabCanvas: React.FC<MarineLabCanvasProps> = ({
     let chestAngle = 0;
 
     function tick() {
+      if (paused) return;
+
+      const now = performance.now();
+      if (lastFrameAt > 0 && !qualityLocked) {
+        const frameMs = now - lastFrameAt;
+        if (warmupFrames > 0) {
+          warmupFrames--;
+        } else if (frameMs > 0 && frameMs < 250) {
+          sampledMs += frameMs;
+          sampledFrames++;
+          if (sampledFrames >= 45) {
+            const avg = sampledMs / sampledFrames;
+            sampledFrames = 0;
+            sampledMs = 0;
+            if (qualityStage === 0 && avg > 40) {
+              // Below ~25fps: render at native resolution and a coarser
+              // refraction buffer. Layout and colours are unchanged.
+              qualityStage = 1;
+              renderer.setPixelRatio(1);
+              renderer.setSize(container.clientWidth, container.clientHeight);
+              renderer.transmissionResolutionScale = 0.2;
+            } else if (qualityStage === 1 && avg > 52) {
+              // Still very slow: let the GPU upscale a slightly smaller buffer.
+              qualityStage = 2;
+              renderer.setPixelRatio(0.75);
+              renderer.setSize(container.clientWidth, container.clientHeight);
+              renderer.transmissionResolutionScale = 0.15;
+            } else {
+              qualityLocked = true;
+            }
+          }
+        }
+      }
+      lastFrameAt = now;
+
       const delta = Math.min(clock.getDelta(), 0.1);
       const elapsed = clock.getElapsedTime();
 
@@ -589,6 +654,12 @@ export const MarineLabCanvas: React.FC<MarineLabCanvasProps> = ({
 
       particleSystem.rotation.y = elapsed * 0.025;
 
+      // Shadows are refreshed a few times per second instead of every frame.
+      if (isHandheld && !isSoftwareGl) {
+        shadowFrame++;
+        if (shadowFrame % 6 === 0) renderer.shadowMap.needsUpdate = true;
+      }
+
       renderer.render(scene, camera);
 
       if (isSoftwareGl) {
@@ -611,8 +682,28 @@ export const MarineLabCanvas: React.FC<MarineLabCanvasProps> = ({
 
     window.addEventListener('resize', handleResize);
 
+    // Stop rendering while the tab/app is in the background and resume cleanly.
+    const handleVisibility = () => {
+      if (document.hidden) {
+        paused = true;
+        cancelAnimationFrame(frameId);
+        clearTimeout(frameId);
+      } else if (paused) {
+        paused = false;
+        lastFrameAt = 0;
+        clock.getDelta();
+        if (isSoftwareGl) {
+          afterDraw(tick);
+        } else {
+          frameId = requestAnimationFrame(tick);
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
     return () => {
       window.removeEventListener('resize', handleResize);
+      document.removeEventListener('visibilitychange', handleVisibility);
       renderer.domElement.removeEventListener('pointerdown', handlePointerDown);
       renderer.domElement.removeEventListener('pointerup', handlePointerUp);
       renderer.domElement.removeEventListener('pointercancel', handlePointerCancel);

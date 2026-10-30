@@ -9,6 +9,23 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      /* Older mobile browsers (and in-app webviews) do not support 100dvh and
+         report 100vh including the browser chrome, which pushes the bottom
+         cards off screen. Measure the real visible height instead. */
+      (function () {
+        var setAppHeight = function () {
+          var h = Math.round(window.innerHeight || 0);
+          if (h > 0) document.documentElement.style.setProperty('--app-h', h + 'px');
+        };
+        setAppHeight();
+        window.addEventListener('resize', setAppHeight);
+        window.addEventListener('orientationchange', setAppHeight);
+        if (window.visualViewport) {
+          window.visualViewport.addEventListener('resize', setAppHeight);
+        }
+      })();
+    </script>
     <script type="module" src="/main.tsx"></script>
   </body>
 </html>

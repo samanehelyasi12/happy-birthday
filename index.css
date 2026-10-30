@@ -46,3 +46,13 @@
 .mb-safe {
   margin-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/* Frosted glass panels use a smaller blur radius on phones: visually the same
+   frosted look, but the browser has to blur much less of the 3D canvas behind
+   them every frame (a big win on weaker mobile GPUs). */
+@media (max-width: 767px) {
+  :root {
+    --blur-md: 6px;
+    --blur-sm: 4px;
+  }
+}

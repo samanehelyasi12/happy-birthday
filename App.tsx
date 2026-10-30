@@ -159,7 +159,7 @@ export default function App() {
   return (
     <main
       className="relative w-screen h-screen overflow-hidden bg-[#071120] select-none text-slate-100 font-sans"
-      style={{ height: '100dvh' }}
+      style={{ height: 'var(--app-h, 100vh)' }}
       dir="rtl"
     >
       {/* 3D WebGL Canvas Viewport */}
